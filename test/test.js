@@ -1,7 +1,7 @@
 var read = require( '../promise-file-read' );
 var cPath = './test/test.txt';
 
-read( cPath )
+read( cPath, 'buffer' )
 .then( function( cContent ){
     console.log( '*** Test1' );
     console.log( cContent );

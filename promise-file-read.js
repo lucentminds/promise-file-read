@@ -18,7 +18,19 @@ var readFile = module.exports = function( aSrc, cContentType ){ // jshint ignore
     var cSrcType = typeof aSrc;
 
     // Determines the content type of the files we are loading.
-    cContentType = cContentType || 'utf-8';
+    switch( true ) {
+    case cContentType === 'buffer':
+        cContentType = null;
+        break;
+
+    case !cContentType:
+        cContentType = 'utf-8';
+        break;
+
+    default:
+        // Don't change anything.
+
+    }// /switch()
 
     switch( true ) {
     case ( cSrcType === 'string' ):
