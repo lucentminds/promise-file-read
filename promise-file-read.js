@@ -9,84 +9,79 @@
 /* jshint undef: true, unused: true */
 /* jslint node: true */
 
-var Q = require( 'q' );
-var fs = require( 'fs' );
-var resolve = require( 'promise-resolve-path' );
+const fs = require( 'fs' );
+const path_resolve = require( 'promise-resolve-path' );
 
-var readFile = module.exports = function( aSrc, cContentType ){ // jshint ignore:line
-    var deferred = Q.defer();
-    var cSrcType = typeof aSrc;
+const read_file = async function( aSrc, cContentType ){ // jshint ignore:line
+    return new Promise(function( resolve, reject ){
+        var cSrcType = typeof aSrc;
 
-    // Determines the content type of the files we are loading.
-    switch( true ) {
-    case cContentType === 'buffer':
-        cContentType = null;
-        break;
+        // Determines the content type of the files we are loading.
+        switch( true ) {
+        case cContentType === 'buffer':
+            cContentType = null;
+            break;
 
-    case !cContentType:
-        cContentType = 'utf-8';
-        break;
+        case !cContentType:
+            cContentType = 'utf-8';
+            break;
 
-    default:
-        // Don't change anything.
+        default:
+            // Don't change anything.
 
-    }// /switch()
+        }// /switch()
 
-    switch( true ) {
-    case ( cSrcType === 'string' ):
-        aSrc = [aSrc];
-        break;
+        switch( true ) {
+        case ( cSrcType === 'string' ):
+            aSrc = [aSrc];
+            break;
 
-    case Array.isArray( aSrc ):
-        break;
+        case Array.isArray( aSrc ):
+            break;
 
-    default:
-        deferred.reject( 'Invalid source path argument: '.concat( aSrc ) );
-        return deferred.promise;
-
-    }// /switch()
-    
-    resolve( aSrc, true )
-    .then(function( aPaths ){
-        var i, l = aPaths.length;
-        var aPromises = [];
-
-        // Loop over each file path and read it's file.
-        for( i = 0; i < l; i++ ) {
-            aPromises.push( readOneFile( aPaths[ i ], cContentType ) );
-        }// /for()
+        default:
+            return reject( 'Invalid source path argument: '.concat( aSrc ) );
+        }// /switch()
         
-        // Either wait for all paths to be read or reject one.
-        return Q.all( aPromises );
-    })
-    .then(function( aContent ){
-        if( cSrcType === 'string' )  {
-            deferred.resolve( aContent[0] );
-        }
-        else {
-            deferred.resolve( aContent );
-        }
-    })
-    .fail(function( err ){
-       deferred.reject( err );
-    }).done();
+        path_resolve( aSrc, true )
+        .then(function( aPaths ){
+            var i, l = aPaths.length;
+            var aPromises = [];
 
-    return deferred.promise;
+            // Loop over each file path and read it's file.
+            for( i = 0; i < l; i++ ) {
+                aPromises.push( readOneFile( aPaths[ i ], cContentType ) );
+            }// /for()
+            
+            // Either wait for all paths to be read or reject one.
+            return Promise.all( aPromises );
+        })
+        .then(function( aContent ){
+            if( cSrcType === 'string' )  {
+                resolve( aContent[0] );
+            }
+            else {
+                resolve( aContent );
+            }
+        })
+        .catch(function( err ){
+            reject( err );
+        });
+
+    });
 };// /readFile()
 
 
 var readOneFile = function( cPath, cContentType ) {
-    var deferred = Q.defer();
-
-    fs.readFile( cPath, cContentType, function ( err, cContent ) {
-        if ( err ) {
-            return deferred.reject( err );
-        }
-
-        
-        deferred.resolve( cContent );
+    return new Promise(function( resolve, reject ){
+        fs.readFile( cPath, cContentType, function ( err, cContent ) {
+            if ( err ) {
+                return reject( err );
+            }
+            
+            resolve( cContent );
+        });
     });
-
-    return deferred.promise;
-
 };// /readOneFile()
+
+module.exports = read_file;
